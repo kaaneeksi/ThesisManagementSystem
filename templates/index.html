@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask API CRUD Operations</title>
+</head>
+<body>
+    <h1>Author Operations</h1>
+
+    <h2>Add Author</h2>
+    <form id="add-author-form">
+        <input type="text" id="author-first-name" placeholder="First Name" required>
+        <input type="text" id="author-last-name" placeholder="Last Name" required>
+        <button type="submit">Add Author</button>
+    </form>
+
+    <h2>Authors List</h2>
+    <ul id="authors-list">
+
+    </ul>
+
+    <h1>Thesis Operations</h1>
+
+    <h2>Add Thesis</h2>
+    <form id="add-thesis-form">
+        <input type="text" id="thesis-title" placeholder="Title" required>
+        <textarea id="thesis-abstract" placeholder="Abstract" required></textarea>
+        <input type="number" id="author-id" placeholder="Author ID" required>
+        <input type="number" id="year" placeholder="Year" required>
+        <input type="text" id="type" placeholder="Type" required>
+        <input type="number" id="university-id" placeholder="University ID" required>
+        <input type="number" id="institute-id" placeholder="Institute ID" required>
+        <input type="number" id="number-of-pages" placeholder="Number of Pages" required>
+        <input type="date" id="submission-date" required>
+        <input type="number" id="language-id" placeholder="Language ID" required>
+        <button type="submit">Add Thesis</button>
+    </form>
+
+    <h2>Theses List</h2>
+    <ul id="theses-list">
+    </ul>
+
+    <script>
+        document.getElementById('add-author-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const firstName = document.getElementById('author-first-name').value;
+            const lastName = document.getElementById('author-last-name').value;
+
+            const response = await fetch('http://127.0.0.1:5000/authors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName
+                })
+            });
+
+            const data = await response.json();
+            alert(data.message);
+            fetchAuthors();
+        });
+
+        async function fetchAuthors() {
+            const response = await fetch('http://127.0.0.1:5000/authors');
+            const authors = await response.json();
+            const list = document.getElementById('authors-list');
+            list.innerHTML = '';
+
+            authors.forEach(author => {
+                const item = document.createElement('li');
+                item.textContent = `${author.first_name} ${author.last_name}`;
+                list.appendChild(item);
+            });
+        }
+
+        document.getElementById('add-thesis-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('thesis-title').value;
+            const abstract = document.getElementById('thesis-abstract').value;
+            const authorId = document.getElementById('author-id').value;
+            const year = document.getElementById('year').value;
+            const type = document.getElementById('type').value;
+            const universityId = document.getElementById('university-id').value;
+            const instituteId = document.getElementById('institute-id').value;
+            const numberOfPages = document.getElementById('number-of-pages').value;
+            const submissionDate = document.getElementById('submission-date').value;
+            const languageId = document.getElementById('language-id').value;
+
+            const response = await fetch('http://127.0.0.1:5000/theses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    abstract: abstract,
+                    author_id: authorId,
+                    year: year,
+                    type: type,
+                    university_id: universityId,
+                    institute_id: instituteId,
+                    number_of_pages: numberOfPages,
+                    submission_date: submissionDate,
+                    language_id: languageId
+                })
+            });
+
+            const data = await response.json();
+            alert(data.message);
+            fetchTheses();
+        });
+
+        async function fetchTheses() {
+            const response = await fetch('http://127.0.0.1:5000/theses');
+            const theses = await response.json();
+            const list = document.getElementById('theses-list');
+            list.innerHTML = '';
+
+            theses.forEach(thesis => {
+                const item = document.createElement('li');
+                item.textContent = `${thesis.title} by Author ID: ${thesis.author_id} (${thesis.year})`;
+                list.appendChild(item);
+            });
+        }
+
+        window.onload = function() {
+            fetchAuthors();
+            fetchTheses();
+        };
+    </script>
+</body>
+</html>
