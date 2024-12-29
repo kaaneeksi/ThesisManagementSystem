@@ -7,10 +7,12 @@ from typing import List, Optional
 from models import Base, Author, Thesis, University, Institute, Language, Keyword, SubjectTopic, Supervisor, ThesisKeyword, ThesisSupervisor, ThesisTopic
 from DTO import *
 from sqlalchemy.exc import IntegrityError
+from config import Config
 
 app = FastAPI(title="Thesis API")
 
-DATABASE_URL = "postgresql://postgres:QSecrvKl.712.B@213.14.135.179:53857/db_project"
+DATABASE_URL = Config.SQLALCHEMY_DATABASE_URI
+
 engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(bind=engine)
@@ -69,7 +71,6 @@ def delete_author(author_id: int, db: Session = Depends(get_db)):
 
 @app.post("/institutes/", response_model=InstituteResponse)
 def create_institute(institute: InstituteCreate, db: Session = Depends(get_db)):
-    """Yeni bir enstitü oluştur"""
     try:
         db_institute = Institute(
             name=institute.name,
@@ -94,7 +95,6 @@ def get_institutes(
     university_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
-    """Enstitüleri listele ve filtreleme seçenekleri sun"""
     query = db.query(Institute)
     
     if name:
@@ -106,7 +106,6 @@ def get_institutes(
 
 @app.get("/institutes/{institute_id}", response_model=InstituteResponse)
 def get_institute(institute_id: int, db: Session = Depends(get_db)):
-    """Belirli bir enstitüyü getir"""
     institute = db.query(Institute).filter(Institute.institute_id == institute_id).first()
     if institute is None:
         raise HTTPException(status_code=404, detail="Enstitü bulunamadı")
@@ -118,7 +117,6 @@ def update_institute(
     institute_update: InstituteUpdate,
     db: Session = Depends(get_db)
 ):
-    """Enstitü bilgilerini güncelle"""
     db_institute = db.query(Institute).filter(Institute.institute_id == institute_id).first()
     if db_institute is None:
         raise HTTPException(status_code=404, detail="Enstitü bulunamadı")
@@ -140,7 +138,6 @@ def update_institute(
 
 @app.delete("/institutes/{institute_id}")
 def delete_institute(institute_id: int, db: Session = Depends(get_db)):
-    """Enstitüyü sil"""
     db_institute = db.query(Institute).filter(Institute.institute_id == institute_id).first()
     if db_institute is None:
         raise HTTPException(status_code=404, detail="Enstitü bulunamadı")
@@ -158,7 +155,6 @@ def delete_institute(institute_id: int, db: Session = Depends(get_db)):
 
 @app.get("/institutes/university/{university_id}", response_model=List[InstituteResponse])
 def get_institutes_by_university(university_id: int, db: Session = Depends(get_db)):
-    """Belirli bir üniversiteye ait tüm enstitüleri getir"""
     institutes = db.query(Institute).filter(Institute.university_id == university_id).all()
     if not institutes:
         raise HTTPException(
@@ -167,7 +163,6 @@ def get_institutes_by_university(university_id: int, db: Session = Depends(get_d
         )
     return institutes
 
-# Uygulama başlangıcında tabloları oluştur
 def init_db():
     Base.metadata.create_all(bind=engine)
 

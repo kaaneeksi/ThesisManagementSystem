@@ -88,7 +88,6 @@ class Thesis(Base):
         ),
     )
     
-    # Relationships
     author = relationship("Author", back_populates="theses")
     university = relationship("University", back_populates="theses")
     institute = relationship("Institute", back_populates="theses")
