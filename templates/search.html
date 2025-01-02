@@ -100,6 +100,7 @@
                 <th>University</th>
                 <th>Institute</th>
                 <th>Abstract</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
@@ -134,34 +135,38 @@
             if (institute) params.append("institute", institute);
 
             try {
-                // API isteği gönder
                 const response = await fetch(`${apiUrl}?${params.toString()}`);
-                if (!response.ok) {
-                    throw new Error("No theses found or server error.");
-                }
-
-                // Sonuçları al
                 const data = await response.json();
 
-                // Sonuçları tabloya ekle
                 const resultsBody = document.getElementById("resultsBody");
-                resultsBody.innerHTML = ""; // Önceki sonuçları temizle
+                resultsBody.innerHTML = "";
+
                 data.forEach((thesis) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
                         <td>${thesis.title}</td>
+                        <td>${thesis.author.first_name} ${thesis.author.last_name}</td>
                         <td>${thesis.year}</td>
                         <td>${thesis.type}</td>
+                        <td>${thesis.language.language_name}</td>
+                        <td>${thesis.university.name}</td>
+                        <td>${thesis.institute.name}</td>
                         <td>${thesis.abstract}</td>
+                        <td><button class="detail-button" onclick="showDetails(${thesis.thesis_no})">Show Details</button></td>
                     `;
                     resultsBody.appendChild(row);
                 });
 
-                // Tabloyu görünür yap
                 document.getElementById("resultsTable").style.display = "table";
             } catch (error) {
                 alert(error.message);
             }
+        }
+
+        function showDetails(thesisNo) {
+            localStorage.setItem("thesisNo", thesisNo);
+            console.log(thesisNo);
+            window.location.href = `./thesis_detail.html`;
         }
     </script>
 </body>

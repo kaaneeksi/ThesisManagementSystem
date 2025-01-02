@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thesis Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, textarea, button {
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Thesis Details</h1>
+
+        <form id="thesisForm">
+            <label for="title">Thesis Title</label>
+            <input type="text" id="title" name="title">
+
+            <label for="author">Author Name</label>
+            <input type="text" id="author" name="author">
+
+            <label for="year">Year</label>
+            <input type="number" id="year" name="year">
+
+            <label for="type">Thesis Type</label>
+            <input type="text" id="type" name="type">
+
+            <label for="language">Language</label>
+            <input type="text" id="language" name="language">
+
+            <label for="abstract">Abstract</label>
+            <textarea id="abstract" name="abstract"></textarea>
+
+            <button type="button" onclick="updateThesis()">Update Thesis</button>
+            <button type="button" class="delete-button" onclick="deleteThesis()">Delete Thesis</button>
+        </form>
+    </div>
+
+    <script>
+        async function getThesisDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const thesisNo = localStorage.getItem('thesisNo');
+            console.log(thesisNo);
+
+            const apiUrl = "http://localhost:8000/theses/";
+
+            try {
+                const response = await fetch(`${apiUrl}?thesis_no=${thesisNo}`);
+                const thesis = await response.json();
+
+                // Verinin doğru şekilde geldiğinden emin olmak için kontrol edelim
+                if (thesis && thesis.length > 0) {
+                    const thesisData = thesis[0]; // Veri dizisini alıp ilk elemanı kullanıyoruz.
+
+                    // Yazar bilgisi var mı kontrolü
+                    const authorName = thesisData.author ? `${thesisData.author.first_name} ${thesisData.author.last_name}` : 'Author not available';
+                    document.getElementById("title").value = thesisData.title || 'Title not available';
+                    document.getElementById("author").value = authorName;
+                    document.getElementById("year").value = thesisData.year || 'Year not available';
+                    document.getElementById("type").value = thesisData.type || 'Type not available';
+                    document.getElementById("language").value = thesisData.language ? thesisData.language.language_name : 'Language not available';
+                    document.getElementById("abstract").value = thesisData.abstract || 'Abstract not available';
+                } else {
+                    alert('No thesis data found for this thesis number');
+                }
+            } catch (error) {
+                console.error('Error fetching thesis details:', error);
+                alert('There was an error fetching thesis details. Please try again later.');
+            }
+        }
+
+        async function updateThesis() {
+            const thesisNo = localStorage.getItem('thesisNo');
+            const apiUrl = "http://localhost:8000";
+
+            const updatedThesis = {
+                title: document.getElementById("title").value,
+                author: document.getElementById("author").value,
+                year: document.getElementById("year").value,
+                type: document.getElementById("type").value,
+                language: document.getElementById("language").value,
+                abstract: document.getElementById("abstract").value,
+            };
+
+            const response = await fetch(`${apiUrl}/update_thesis/${thesisNo}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedThesis)
+            });
+
+            if (response.ok) {
+                alert("Thesis updated successfully!");
+            } else {
+                const errorMessage = await response.json();
+                alert(`Failed to update thesis. Error: ${errorMessage.detail}`);
+            }
+        }
+
+        async function deleteThesis() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const thesisNo = urlParams.get('thesisNo');
+
+            const response = await fetch(`/api/theses/${thesisNo}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                alert("Thesis deleted successfully!");
+                window.location.href = "./search.html"; // Redirect to search page
+            } else {
+                alert("Failed to delete thesis.");
+            }
+        }
+
+        getThesisDetails();
+    </script>
+</body>
+</html>

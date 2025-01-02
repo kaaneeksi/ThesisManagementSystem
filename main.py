@@ -38,8 +38,9 @@ def get_db():
 def read_root():
     return {"message": "Welcome to the Thesis API"}
         
-@app.get("/theses/", response_model=List[ThesisResponse])
+@app.get("/theses/", response_model=List[ThesisResponseWithRelations])
 def search_theses(
+    thesis_no: Optional[int] = Query(None, description="Search by thesis ID"),
     title: Optional[str] = Query(None, description="Search by thesis title"),
     author_name: Optional[str] = Query(None, description="Search by author name"),
     keyword: Optional[str] = Query(None, description="Search by keyword"),
@@ -74,6 +75,8 @@ def search_theses(
         query = query.filter(University.name.ilike(f"%{university}%"))
     if institute:
         query = query.filter(Institute.name.ilike(f"%{institute}%"))
+    if thesis_no:
+        query = query.filter(Thesis.thesis_no == thesis_no)
 
     results = query.all()
 
@@ -82,6 +85,27 @@ def search_theses(
 
     return results
 
+@app.put("/update_thesis/{thesis_no}", response_model=ThesisResponseWithRelations) #veritabanında güncelleme olmuyor ama 200 dönüyor.
+def update_thesis(thesis_no: int, thesis: ThesisUpdate, db: Session = Depends(get_db)):
+    db_thesis = db.query(Thesis).filter(Thesis.thesis_no == thesis_no).first()
+
+    if db_thesis is None:
+        raise HTTPException(status_code=404, detail="Thesis not found")
+    
+    try:
+        update_data = thesis.dict(exclude_unset=False)
+        for key, value in update_data.items():
+            if value is not None:
+                setattr(db_thesis, key, value)
+        db.commit()
+        db.refresh(db_thesis)
+        return db_thesis
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Update failed. Please check the provided data. Error: {str(e)}"
+        )
 
 @app.post("/authors/", response_model=AuthorResponse)
 def create_author(author: AuthorCreate, db: Session = Depends(get_db)):
