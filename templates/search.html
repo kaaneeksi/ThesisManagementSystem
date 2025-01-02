@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thesis Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, button {
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h1>Thesis Search</h1>
+    <form id="searchForm">
+        <label for="title">Thesis Title</label>
+        <input type="text" id="title" name="title" placeholder="Enter thesis title">
+
+        <label for="author">Author Name</label>
+        <input type="text" id="author" name="author" placeholder="Enter author name">
+
+        <label for="keyword">Keyword</label>
+        <input type="text" id="keyword" name="keyword" placeholder="Enter keyword">
+
+        <label for="topic">Topic</label>
+        <input type="text" id="topic" name="topic" placeholder="Enter topic">
+
+        <label for="year">Year</label>
+        <input type="number" id="year" name="year" placeholder="Enter year">
+
+        <label for="type">Thesis Type</label>
+        <input type="text" id="type" name="type" placeholder="Enter thesis type (e.g., Master, Doctorate)">
+
+        <label for="language">Language</label>
+        <input type="text" id="language" name="language" placeholder="Enter language">
+
+        <label for="university">University</label>
+        <input type="text" id="university" name="university" placeholder="Enter university name">
+
+        <label for="institute">Institute</label>
+        <input type="text" id="institute" name="institute" placeholder="Enter institute name">
+
+        <button type="button" onclick="searchTheses()">Search</button>
+    </form>
+
+    <table id="resultsTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Year</th>
+                <th>Type</th>
+                <th>Language</th>
+                <th>University</th>
+                <th>Institute</th>
+                <th>Abstract</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+    </table>
+
+    <script>
+        async function searchTheses() {
+            // Form verilerini al
+            const title = document.getElementById("title").value;
+            const author = document.getElementById("author").value;
+            const keyword = document.getElementById("keyword").value;
+            const topic = document.getElementById("topic").value;
+            const year = document.getElementById("year").value;
+            const type = document.getElementById("type").value;
+            const language = document.getElementById("language").value;
+            const university = document.getElementById("university").value;
+            const institute = document.getElementById("institute").value;
+
+            // API endpoint
+            const apiUrl = "http://localhost:8000/theses/";
+
+            // Sorgu parametrelerini oluştur
+            const params = new URLSearchParams();
+            if (title) params.append("title", title);
+            if (author) params.append("author_name", author);
+            if (keyword) params.append("keyword", keyword);
+            if (topic) params.append("topic", topic);
+            if (year) params.append("year", year);
+            if (type) params.append("type", type);
+            if (language) params.append("language", language);
+            if (university) params.append("university", university);
+            if (institute) params.append("institute", institute);
+
+            try {
+                // API isteği gönder
+                const response = await fetch(`${apiUrl}?${params.toString()}`);
+                if (!response.ok) {
+                    throw new Error("No theses found or server error.");
+                }
+
+                // Sonuçları al
+                const data = await response.json();
+
+                // Sonuçları tabloya ekle
+                const resultsBody = document.getElementById("resultsBody");
+                resultsBody.innerHTML = ""; // Önceki sonuçları temizle
+                data.forEach((thesis) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${thesis.title}</td>
+                        <td>${thesis.year}</td>
+                        <td>${thesis.type}</td>
+                        <td>${thesis.abstract}</td>
+                    `;
+                    resultsBody.appendChild(row);
+                });
+
+                // Tabloyu görünür yap
+                document.getElementById("resultsTable").style.display = "table";
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    </script>
+</body>
+</html>

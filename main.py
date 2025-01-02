@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -8,8 +8,18 @@ from models import Base, Author, Thesis, University, Institute, Language, Keywor
 from DTO import *
 from sqlalchemy.exc import IntegrityError
 from config import Config
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Thesis API")
+
+# CORS Middleware'i ekleyin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # İzin verilen origin'leri buraya yazabilirsiniz. Tüm origin'lere izin vermek için ["*"] kullanın.
+    allow_credentials=True,
+    allow_methods=["*"],  # İzin verilen HTTP metodları. Tüm metodlara izin vermek için ["*"] kullanın.
+    allow_headers=["*"],  # İzin verilen başlıklar. Tüm başlıklara izin vermek için ["*"] kullanın.
+)
 
 DATABASE_URL = Config.SQLALCHEMY_DATABASE_URI
 
@@ -23,6 +33,55 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Thesis API"}
+        
+@app.get("/theses/", response_model=List[ThesisResponse])
+def search_theses(
+    title: Optional[str] = Query(None, description="Search by thesis title"),
+    author_name: Optional[str] = Query(None, description="Search by author name"),
+    keyword: Optional[str] = Query(None, description="Search by keyword"),
+    topic: Optional[str] = Query(None, description="Search by topic"),
+    year: Optional[int] = Query(None, description="Search by year"),
+    type: Optional[str] = Query(None, description="Search by thesis type"),
+    language: Optional[str] = Query(None, description="Search by thesis language"),
+    university: Optional[str] = Query(None, description="Search by university name"),
+    institute: Optional[str] = Query(None, description="Search by institute name"),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Thesis).join(Author).join(Language).join(Institute).join(University)
+    query = query.outerjoin(Thesis.keywords).outerjoin(Thesis.topics)
+
+    if title:
+        query = query.filter(Thesis.title.ilike(f"%{title}%"))
+    if author_name:
+        query = query.filter(
+            (Author.first_name.ilike(f"%{author_name}%")) | (Author.last_name.ilike(f"%{author_name}%"))
+        )
+    if keyword:
+        query = query.filter(Keyword.keyword_name.ilike(f"%{keyword}%"))
+    if topic:
+        query = query.filter(SubjectTopic.topic_name.ilike(f"%{topic}%"))
+    if year:
+        query = query.filter(Thesis.year == year)
+    if type:
+        query = query.filter(Thesis.type.ilike(f"%{type}%"))
+    if language:
+        query = query.filter(Language.language_name.ilike(f"%{language}%"))
+    if university:
+        query = query.filter(University.name.ilike(f"%{university}%"))
+    if institute:
+        query = query.filter(Institute.name.ilike(f"%{institute}%"))
+
+    results = query.all()
+
+    if not results:
+        raise HTTPException(status_code=404, detail="No theses found matching the criteria")
+
+    return results
+
 
 @app.post("/authors/", response_model=AuthorResponse)
 def create_author(author: AuthorCreate, db: Session = Depends(get_db)):
