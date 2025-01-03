@@ -33,11 +33,11 @@ def get_db():
         yield db
     finally:
         db.close()
-        
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Thesis API"}
-        
+
 @app.get("/theses/", response_model=List[ThesisResponseWithRelations])
 def search_theses(
     thesis_no: Optional[int] = Query(None, description="Search by thesis ID"),
@@ -88,19 +88,24 @@ def search_theses(
 @app.put("/update_thesis/{thesis_no}", response_model=ThesisResponseWithRelations) #veritabanında güncelleme olmuyor ama 200 dönüyor.
 def update_thesis(thesis_no: int, thesis: ThesisUpdate, db: Session = Depends(get_db)):
     db_thesis = db.query(Thesis).filter(Thesis.thesis_no == thesis_no).first()
-
+    print("Filter Sonucu:", db_thesis) #thesis_no değerine sahip bir kayıt varsa bu kaydı döndürüyor.
     if db_thesis is None:
         raise HTTPException(status_code=404, detail="Thesis not found")
-    
+
     try:
         update_data = thesis.dict(exclude_unset=False)
+        print("Update Data:", update_data) #güncellenecek verileri döndürüyor.
         for key, value in update_data.items():
             if value is not None:
+                print(f"Updating {key} to {value}") # hangi alanın güncelleneceğini ve güncellenecek değeri döndürüyor.
                 setattr(db_thesis, key, value)
         db.commit()
+        print("Commit başarılı")  # Commit işlemini kontrol edin
         db.refresh(db_thesis)
+        print("Güncellenmiş Kayıt:", db_thesis)  # Kayıt başarıyla güncellenmiş mi loglayın
         return db_thesis
     except IntegrityError as e:
+        print("IntegrityError:", e)  # Hata detaylarını loglayın
         db.rollback()
         raise HTTPException(
             status_code=400,
@@ -132,12 +137,12 @@ def update_author(author_id: int, author: AuthorUpdate, db: Session = Depends(ge
     db_author = db.query(Author).filter(Author.author_id == author_id).first()
     if db_author is None:
         raise HTTPException(status_code=404, detail="Author not found")
-    
+
     if author.first_name is not None:
         db_author.first_name = author.first_name
     if author.last_name is not None:
         db_author.last_name = author.last_name
-    
+
     db.commit()
     db.refresh(db_author)
     return db_author
@@ -147,7 +152,7 @@ def delete_author(author_id: int, db: Session = Depends(get_db)):
     db_author = db.query(Author).filter(Author.author_id == author_id).first()
     if db_author is None:
         raise HTTPException(status_code=404, detail="Author not found")
-    
+
     db.delete(db_author)
     db.commit()
     return {"message": "Author deleted successfully"}
@@ -179,12 +184,12 @@ def get_institutes(
     db: Session = Depends(get_db)
 ):
     query = db.query(Institute)
-    
+
     if name:
         query = query.filter(Institute.name.ilike(f"%{name}%"))
     if university_id:
         query = query.filter(Institute.university_id == university_id)
-    
+
     return query.offset(skip).limit(limit).all()
 
 @app.get("/institutes/{institute_id}", response_model=InstituteResponse)
@@ -208,7 +213,7 @@ def update_institute(
         update_data = institute_update.dict(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_institute, key, value)
-        
+
         db.commit()
         db.refresh(db_institute)
         return db_institute
@@ -224,7 +229,7 @@ def delete_institute(institute_id: int, db: Session = Depends(get_db)):
     db_institute = db.query(Institute).filter(Institute.institute_id == institute_id).first()
     if db_institute is None:
         raise HTTPException(status_code=404, detail="Enstitü bulunamadı")
-    
+
     try:
         db.delete(db_institute)
         db.commit()
