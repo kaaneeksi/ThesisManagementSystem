@@ -3,95 +3,515 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask API CRUD Operations</title>
-</head>
-<body>
-    <h1>Author Operations</h1>
-
-    <h2>Add Author</h2>
-    <form id="add-author-form">
-        <input type="text" id="author-first-name" placeholder="First Name" required>
-        <input type="text" id="author-last-name" placeholder="Last Name" required>
-        <button type="submit">Add Author</button>
-    </form>
-
-    <h2>Authors List</h2>
-    <ul id="authors-list">
-
-    </ul>
-
-    <h1>Thesis Operations</h1>
-
-    <h2>Add Thesis</h2>
-    <form id="add-thesis-form">
-        <input type="text" id="thesis-title" placeholder="Title" required>
-        <textarea id="thesis-abstract" placeholder="Abstract" required></textarea>
-        <input type="number" id="author-id" placeholder="Author ID" required>
-        <input type="number" id="year" placeholder="Year" required>
-        <input type="text" id="type" placeholder="Type" required>
-        <input type="number" id="university-id" placeholder="University ID" required>
-        <input type="number" id="institute-id" placeholder="Institute ID" required>
-        <input type="number" id="number-of-pages" placeholder="Number of Pages" required>
-        <input type="date" id="submission-date" required>
-        <input type="number" id="language-id" placeholder="Language ID" required>
-        <button type="submit">Add Thesis</button>
-    </form>
-
-    <h2>Theses List</h2>
-    <ul id="theses-list">
-    </ul>
-
-    <script>
-        document.getElementById('add-author-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const firstName = document.getElementById('author-first-name').value;
-            const lastName = document.getElementById('author-last-name').value;
-
-            const response = await fetch('http://127.0.0.1:5000/authors', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    first_name: firstName,
-                    last_name: lastName
-                })
-            });
-
-            const data = await response.json();
-            alert(data.message);
-            fetchAuthors();
-        });
-
-        async function fetchAuthors() {
-            const response = await fetch('http://127.0.0.1:5000/authors');
-            const authors = await response.json();
-            const list = document.getElementById('authors-list');
-            list.innerHTML = '';
-
-            authors.forEach(author => {
-                const item = document.createElement('li');
-                item.textContent = `${author.first_name} ${author.last_name}`;
-                list.appendChild(item);
-            });
+    <title>Database Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
-        document.getElementById('add-thesis-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        nav {
+            background-color: #333;
+            color: white;
+            padding: 1em;
+        }
 
-            const title = document.getElementById('thesis-title').value;
-            const abstract = document.getElementById('thesis-abstract').value;
-            const authorId = document.getElementById('author-id').value;
-            const year = document.getElementById('year').value;
-            const type = document.getElementById('type').value;
-            const universityId = document.getElementById('university-id').value;
-            const instituteId = document.getElementById('institute-id').value;
-            const numberOfPages = document.getElementById('number-of-pages').value;
-            const submissionDate = document.getElementById('submission-date').value;
-            const languageId = document.getElementById('language-id').value;
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            gap: 1em;
+        }
 
-            const response = await fetch('http://127.0.0.1:5000/theses', {
+        nav ul li {
+            display: inline;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+
+        main {
+            padding: 1em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 2em;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 0.5em;
+            text-align: left;
+        }
+
+        button {
+            padding: 0.5em;
+            margin: 0.2em;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1em;
+            background-color: #f4f4f4;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="./search.html">Search</a></li>
+            <li><a href="./thesis_detail.html">Thesis Detail</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <h1>Database Tables</h1>
+        <div id="tables">
+            <!-- Tables will be loaded here -->
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadTables();
+        });
+
+        function loadTables() {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/universities`)
+            .then(response => response.json())
+            .then(universities => renderUniversitiesTable(universities))
+            .catch(err => console.error("Error loading universities:", err));
+
+            fetch(`${apiUrl}/institutes`)
+            .then(response => response.json())
+            .then(institutes => renderInstitutesTable(institutes))
+            .catch(err => console.error("Error loading institutes:", err));
+
+            fetch(`${apiUrl}/languages`)
+            .then(response => response.json())
+            .then(languages => renderLanguagesTable(languages))
+            .catch(err => console.error("Error loading languages:", err));
+
+            fetch(`${apiUrl}/keywords`)
+            .then(response => response.json())
+            .then(keywords => renderKeywordsTable(keywords))
+            .catch(err => console.error("Error loading keywords:", err));
+
+            fetch(`${apiUrl}/subject-topics`)
+            .then(response => response.json())
+            .then(subjectTopics => renderSubjectTopicsTable(subjectTopics))
+            .catch(err => console.error("Error loading subject topics:", err));
+
+            fetch(`${apiUrl}/authors`)
+            .then(response => response.json())
+            .then(authors => renderAuthorsTable(authors))
+            .catch(err => console.error("Error loading authors:", err));
+
+            fetch(`${apiUrl}/supervisors`)
+            .then(response => response.json())
+            .then(supervisors => renderSupervisorsTable(supervisors))
+            .catch(err => console.error("Error loading supervisors:", err));
+
+            fetch(`${apiUrl}/theses`)
+            .then(response => response.json())
+            .then(theses => renderThesesTable(theses))
+            .catch(err => console.error("Error loading theses:", err));
+        }
+
+        function renderThesesTable(theses) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Theses</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thesis No</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Year</th>
+                            <th>Type</th>
+                            <th>Language</th>
+                            <th>University</th>
+                            <th>Institute</th>
+                            <th>Abstract</th>
+                            <th>Number Of Pages</th>
+                            <th>Submission Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${theses.map(thesis => `
+                            <tr>
+                                <td>${thesis.thesis_no}</td>
+                                <td>${thesis.title}</td>
+                                <td>${thesis.author_id}</td>
+                                <td>${thesis.year}</td>
+                                <td>${thesis.type}</td>
+                                <td>${thesis.language_id}</td>
+                                <td>${thesis.university_id}</td>
+                                <td>${thesis.institute_id}</td>
+                                <td>${thesis.abstract}</td>
+                                <td>${thesis.number_of_pages}</td>
+                                <td>${thesis.submission_date}</td>
+                                <td>
+                                    <button onclick="editThesis(${thesis.thesis_no})">Edit</button>
+                                    <button onclick="deleteThesis(${thesis.thesis_no})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New Thesis</h3>
+                <div class="add-row-form">
+                    <label for="thesis_title">Thesis Title</label>
+                    <input type="text" id="thesis_title" placeholder="Enter Thesis Topic" />
+
+                    <label for="thesis_abstract">Abstract</label>
+                    <input type="text" id="thesis_abstract" placeholder="Enter Abstract" />
+
+                    <label for="thesis_author_id">Author Id</label>  
+                    <input type="text" id="thesis_author_id" placeholder="Enter Author Id" />
+
+                    <label for="thesis_year">Thesis Year</label>
+                    <input type="text" id="thesis_year" placeholder="Enter Year" />
+
+                    <label for="thesis_type">Thesis Type</label>
+                    <input type="text" id="thesis_type" placeholder="Enter Type" />
+
+                    <label for="thesis_language_id">Language Id</label>
+                    <input type="text" id="thesis_language_id" placeholder="Enter Language Id" />
+
+                    <label for="thesis_university_id">University Id</label>
+                    <input type="text" id="thesis_university_id" placeholder="Enter University Id" />
+
+                    <label for="thesis_institute_id">Institute Id</label>
+                    <input type="text" id="thesis_institute_id" placeholder="Enter Institute Id" />
+
+                    <label for="thesis_number_of_pages">Number Of Pages</label>
+                    <input type="text" id="thesis_number_of_pages" placeholder="Enter Number Of Pages" />
+
+                    <label for="thesis_submission_date">Submission Date</label>
+                    <input type="text" id="thesis_submission_date" placeholder="Enter Submission Date" />
+
+                    <button onclick="addThesis()">Add New Thesis</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+        }
+
+        function renderSubjectTopicsTable(subjectTopics) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Subject Topics</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Topic ID</th>
+                            <th>Topic Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${subjectTopics.map(subjectTopic => `
+                            <tr>
+                                <td>${subjectTopic.topic_id}</td>
+                                <td>${subjectTopic.topic_name}</td>
+                                <td>
+                                    <button onclick="editSubjectTopic(${subjectTopic.topic_id})">Edit</button>
+                                    <button onclick="deleteSubjectTopic(${subjectTopic.topic_id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New Subject Topic</h3>
+                <div class="add-row-form">
+                    <label for="topic_name">Topic Name</label>
+                    <input type="text" id="topic_name" placeholder="Enter Topic Name" />
+                    <button onclick="addSubjectTopic()">Add New Subject Topic</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+        }
+
+        function renderKeywordsTable(keywords) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Keywords</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Keyword ID</th>
+                            <th>Keyword</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${keywords.map(keyword => `
+                            <tr>
+                                <td>${keyword.keyword_id}</td>
+                                <td>${keyword.keyword_name}</td>
+                                <td>
+                                    <button onclick="editKeyword(${keyword.keyword_id})">Edit</button>
+                                    <button onclick="deleteKeyword(${keyword.keyword_id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New Keyword</h3>
+                <div class="add-row-form">
+                    <label for="keyword">Keyword</label>
+                    <input type="text" id="keyword" placeholder="Enter Keyword" />
+                    <button onclick="addKeyword()">Add New Keyword</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+        }
+
+        function renderSupervisorsTable(supervisors) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Supervisors</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Supervisor ID</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Title</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${supervisors.map(supervisor => `
+                            <tr>
+                                <td>${supervisor.institute_id}</td>
+                                <td>${supervisor.first_name}</td>
+                                <td>${supervisor.last_name}</td>
+                                <td>${supervisor.title}</td>
+                                <td>
+                                    <button onclick="editSupervisor(${supervisor.supervisor_id})">Edit</button>
+                                    <button onclick="deleteSupervisor(${supervisor.supervisor_id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New Supervisor</h3>
+                <div class="add-row-form">
+                    <label for="supervisor_first_name">First Name</label>
+                    <input type="text" id="supervisor_first_name" placeholder="Enter First Name" />
+
+                    <label for="supervisor_last_name">Last Name</label>
+                    <input type="text" id="supervisor_last_name" placeholder="Enter Last Name" />
+
+                    <label for="supervisor_title">Title</label>
+                    <input type="text" id="supervisor_title" placeholder="Enter Name" />
+
+                    <button onclick="addSupervisor()">Add New Supervisor</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+        }
+
+        function renderAuthorsTable(authors) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Authors</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Author ID</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${authors.map(author => `
+                            <tr>
+                                <td>${author.author_id}</td>
+                                <td>${author.first_name}</td>
+                                <td>${author.last_name}</td>
+                                <td>
+                                    <button onclick="editAuthor(${author.author_id})">Edit</button>
+                                    <button onclick="deleteAuthor(${author.author_id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New Author</h3>
+                <div class="add-row-form">
+                    <label for="author_first_name">Name</label>
+                    <input type="text" id="author_first_name" placeholder="Enter First Name" />
+
+                    <label for="author_last_name">Name</label>
+                    <input type="text" id="author_last_name" placeholder="Enter Last Name" />
+
+                    <button onclick="addAuthor()">Add New Author</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+        }
+
+        function renderInstitutesTable(institutes) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Institutes</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Institute ID</th>
+                            <th>Name</th>
+                            <th>University Id</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${institutes.map(institute => `
+                            <tr>
+                                <td>${institute.institute_id}</td>
+                                <td>${institute.name}</td>
+                                <td>${institute.university_id}</td>
+                                <td>
+                                    <button onclick="editInstitute(${institute.institute_id})">Edit</button>
+                                    <button onclick="deleteInstitute(${institute.institute_id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New Institute</h3>
+                <div class="add-row-form">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" placeholder="Enter Name" />
+
+                    <label for="institute_university_id">University Id</label>
+                    <input type="text" id="institute_university_id" placeholder="Enter Universty Id" />
+
+                    <button onclick="addInstitute()">Add New Institute</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+        }
+
+        function renderLanguagesTable(languages) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Languages</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Language ID</th>
+                            <th>Language Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${languages.map(language => `
+                            <tr>
+                                <td>${language.language_id}</td>
+                                <td>${language.language_name}</td>
+                                <td>
+                                    <button onclick="editLanguage(${language.language_id})">Edit</button>
+                                    <button onclick="deleteLanguage(${language.language_id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New Language</h3>
+                <div class="add-row-form">
+                    <label for="language_name">Language Name</label>
+                    <input type="text" id="language_name" placeholder="Enter Language Name" />
+                    <button onclick="addLanguage()">Add New Language</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+        }
+
+        function renderUniversitiesTable(universities) {
+            const container = document.getElementById("tables");
+            const tableElement = document.createElement("div");
+            tableElement.innerHTML = `
+                <h2>Universities</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>University ID</th>
+                            <th>Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${universities.map(university => `
+                            <tr>
+                                <td>${university.university_id}</td>
+                                <td>${university.name}</td>
+                                <td>
+                                    <button onclick="editUniversity(${university.university_id})">Edit</button>
+                                    <button onclick="deleteUniversity(${university.university_id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <h3>Add New University</h3>
+                <div class="add-row-form">
+                    <label for="university_name">Name</label>
+                    <input type="text" id="university_name" placeholder="Enter Name" />
+                    <button onclick="addUniversity()">Add New University</button>
+                </div>
+            `;
+            container.appendChild(tableElement);
+}
+
+        function addThesis() {
+            var title = document.getElementById("thesis_title").value;
+            var abstract = document.getElementById("thesis_abstract").value;
+            var authorId = document.getElementById("thesis_author_id").value;
+            var year = document.getElementById("thesis_year").value;
+            var type = document.getElementById("thesis_type").value;
+            var languageId = document.getElementById("thesis_language_id").value;
+            var universityId = document.getElementById("thesis_university_id").value;
+            var instituteId = document.getElementById("thesis_institute_id").value;
+            var numberOfPages = document.getElementById("thesis_number_of_pages").value;
+            var submissionDate = document.getElementById("thesis_submission_date").value;
+            var formattedSubmissionDate = new Date(submissionDate).toISOString().split('T')[0];
+
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/theses`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -102,36 +522,498 @@
                     author_id: authorId,
                     year: year,
                     type: type,
+                    language_id: languageId,
                     university_id: universityId,
                     institute_id: instituteId,
                     number_of_pages: numberOfPages,
-                    submission_date: submissionDate,
-                    language_id: languageId
+                    submission_date: formattedSubmissionDate
                 })
-            });
-
-            const data = await response.json();
-            alert(data.message);
-            fetchTheses();
-        });
-
-        async function fetchTheses() {
-            const response = await fetch('http://127.0.0.1:5000/theses');
-            const theses = await response.json();
-            const list = document.getElementById('theses-list');
-            list.innerHTML = '';
-
-            theses.forEach(thesis => {
-                const item = document.createElement('li');
-                item.textContent = `${thesis.title} by Author ID: ${thesis.author_id} (${thesis.year})`;
-                list.appendChild(item);
-            });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(error => { throw new Error(error.detail || 'Unknown error'); });
+                }
+                return response.json();
+            })
+            .then(thesis => {
+                alert("Thesis added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding thesis:", err));
         }
 
-        window.onload = function() {
-            fetchAuthors();
-            fetchTheses();
-        };
+
+        function editThesis(thesisNo) {
+            var title = prompt("Enter new thesis title (Leave empty to skip):");
+            var abstract = prompt("Enter new thesis abstract (Leave empty to skip):");
+            var authorId = prompt("Enter new author id (Leave empty to skip):");
+            var year = prompt("Enter new thesis year (Leave empty to skip):");
+            var type = prompt("Enter new thesis type (Leave empty to skip):");
+            var languageId = prompt("Enter new language id (Leave empty to skip):");
+            var universityId = prompt("Enter new university id (Leave empty to skip):");
+            var instituteId = prompt("Enter new institute id (Leave empty to skip):");
+            var numberOfPages = prompt("Enter new number of pages (Leave empty to skip):");
+            var submissionDate = prompt("Enter new submission date (Leave empty to skip):");
+
+            var updateData = {};
+
+            if (title) updateData.title = title;
+            if (abstract) updateData.abstract = abstract;
+            if (authorId) updateData.author_id = authorId;
+            if (year) updateData.year = year;
+            if (type) updateData.type = type;
+            if (languageId) updateData.language_id = languageId;
+            if (universityId) updateData.university_id = universityId;
+            if (instituteId) updateData.institute_id = instituteId;
+            if (numberOfPages) updateData.number_of_pages = numberOfPages;
+            if (submissionDate) updateData.submission_date = submissionDate;
+
+            if (confirm("Do you want to update author, language, university, or institute details?")) {
+                var author = prompt("Enter author first name (Leave empty to skip):");
+                var lastName = prompt("Enter author last name (Leave empty to skip):");
+                var language = prompt("Enter language (Leave empty to skip):");
+                var university = prompt("Enter university name (Leave empty to skip):");
+                var institute = prompt("Enter institute name (Leave empty to skip):");
+
+                if (author || lastName) {
+                    updateData.author = { first_name: author, last_name: lastName };
+                }
+                if (language) updateData.language = { language_name: language };
+                if (university) updateData.university = { name: university };
+                if (institute) updateData.institute = { name: institute };
+            }
+
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/theses/${thesisNo}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => response.json())
+            .then(thesis => {
+                alert("Thesis updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating thesis:", err));
+        }
+
+        function deleteThesis(thesisNo) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/theses/${thesisNo}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Thesis deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete thesis.");
+                }
+            })
+            .catch(err => console.error("Error deleting thesis:", err));
+        }
+
+
+        function addUniversity() {
+            var universityName = document.getElementById("university_name").value;
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/universities`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: universityName })
+            })
+            .then(response => response.json())
+            .then(university => {
+                alert("University added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding university:", err));
+        }
+
+        function editUniversity(universityId) {
+            var universityName = prompt("Enter new university name:");
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/universities/${universityId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: universityName })
+            })
+            .then(response => response.json())
+            .then(university => {
+                alert("University updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating university:", err));
+        }
+
+        function deleteUniversity(universityId) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/universities/${universityId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("University deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete university.");
+                }
+            })
+            .catch(err => console.error("Error deleting university:", err));
+        }
+
+        function addLanguage() {
+            var languageName = document.getElementById("language_name").value;
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/languages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ language_name: languageName })
+            })
+            .then(response => response.json())
+            .then(language => {
+                alert("Language added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding language:", err));
+        }
+
+        function editLanguage(languageId) {
+            var languageName = prompt("Enter new language name:");
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/languages/${languageId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ language_name: languageName })
+            })
+            .then(response => response.json())
+            .then(language => {
+                alert("Language updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating language:", err));
+        }
+
+        function deleteLanguage(languageId) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/languages/${languageId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Language deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete language.");
+                }
+            })
+            .catch(err => console.error("Error deleting language:", err));
+        }
+
+        function addInstitute() {
+            var name = document.getElementById("name").value;
+            var universityId = document.getElementById("institute_university_id").value;
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/institutes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: name, university_id: universityId })
+            })
+            .then(response => response.json())
+            .then(institute => {
+                alert("Institute added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding institute:", err));
+        }
+
+        function editInstitute(instituteId) {
+            var name = prompt("Enter new institute name:");
+            var universityId = prompt("Enter new university id:");
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/institutes/${instituteId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: name, university_id: universityId })
+            })
+            .then(response => response.json())
+            .then(institute => {
+                alert("Institute updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating institute:", err));
+        }
+
+        function deleteInstitute(instituteId) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/institutes/${instituteId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Institute deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete institute.");
+                }
+            })
+            .catch(err => console.error("Error deleting institute:", err));
+        }
+
+        function addKeyword() {
+            var keywordName = document.getElementById("keyword").value;
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/keywords`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ keyword_name: keywordName })
+            })
+            .then(response => response.json())
+            .then(keyword => {
+                alert("Keyword added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding keyword:", err));
+        }
+
+        function editKeyword(keywordId) {
+            var keywordName = prompt("Enter new keyword name:");
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/keywords/${keywordId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ keyword_name: keywordName })
+            })
+            .then(response => response.json())
+            .then(keyword => {
+                alert("Keyword updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating keyword:", err));
+        }
+
+        function deleteKeyword(keywordId) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/keywords/${keywordId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Keyword deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete keyword.");
+                }
+            })
+            .catch(err => console.error("Error deleting keyword:", err));
+        }
+
+        function addAuthor() {
+            var firstName = document.getElementById("author_first_name").value;
+            var lastName = document.getElementById("author_last_name").value;
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/authors`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ first_name: firstName, last_name: lastName })
+            })
+            .then(response => response.json())
+            .then(author => {
+                alert("Author added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding author:", err));
+        }
+
+        function editAuthor(authorId) {
+            var firstName = prompt("Enter new author first name:");
+            var lastName = prompt("Enter new author last name:");
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/authors/${authorId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ first_name: firstName, last_name: lastName })
+            })
+            .then(response => response.json())
+            .then(author => {
+                alert("Author updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating author:", err));
+        }
+
+        function deleteAuthor(authorId) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/authors/${authorId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Author deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete author.");
+                }
+            })
+            .catch(err => console.error("Error deleting author:", err));
+        }
+
+        function addSupervisor() {
+            var firstName = document.getElementById("supervisor_first_name").value;
+            var lastName = document.getElementById("supervisor_last_name").value;
+            var title = document.getElementById("supervisor_title").value;
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/supervisors`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ first_name: firstName, last_name: lastName, title: title })
+            })
+            .then(response => response.json())
+            .then(supervisor => {
+                alert("Supervisor added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding supervisor:", err));
+        }
+
+        function editSupervisor(supervisorId) {
+            var firstName = prompt("Enter new supervisor first name:");
+            var lastName = prompt("Enter new supervisor last name:");
+            var title = prompt("Enter new supervisor title:");
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/supervisors/${supervisorId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ first_name: firstName, last_name: lastName, title: title })
+            })
+            .then(response => response.json())
+            .then(supervisor => {
+                alert("Supervisor updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating supervisor:", err));
+        }
+
+        function deleteSupervisor(supervisorId) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/supervisors/${supervisorId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Supervisor deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete supervisor.");
+                }
+            })
+            .catch(err => console.error("Error deleting supervisor:", err));
+        }
+
+        function addSubjectTopic() {
+            var topicName = document.getElementById("topic_name").value;
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/subject-topics`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ topic_name: topicName })
+            })
+            .then(response => response.json())
+            .then(subjectTopic => {
+                alert("Subject Topic added successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error adding subject topic:", err));
+        }
+
+        function editSubjectTopic(topicId) {
+            var topicName = prompt("Enter new topic name:");
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/subject-topics/${topicId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ topic_name: topicName })
+            })
+            .then(response => response.json())
+            .then(subjectTopic => {
+                alert("Subject Topic updated successfully!");
+                loadTables();
+            })
+            .catch(err => console.error("Error updating subject topic:", err));
+        }
+
+        function deleteSubjectTopic(topicId) {
+            var apiUrl = 'http://localhost:8000';
+
+            fetch(`${apiUrl}/subject-topics/${topicId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Subject Topic deleted successfully!");
+                    loadTables();
+                } else {
+                    alert("Failed to delete subject topic.");
+                }
+            })
+            .catch(err => console.error("Error deleting subject topic:", err));
+        }
+
+
+
+        // Similarly, you can define the CRUD operations for other tables (Universities, Institutes, Languages, Keywords, etc.) by following the same pattern as the "Theses" table.
     </script>
 </body>
 </html>

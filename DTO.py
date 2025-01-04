@@ -155,6 +155,10 @@ class ThesisUpdate(BaseModel):
     number_of_pages: Optional[int] = None
     submission_date: Optional[date] = None
     language_id: Optional[int] = None
+    author: Optional[AuthorUpdate] = None
+    language: Optional[LanguageUpdate] = None
+    university: Optional[UniversityUpdate] = None
+    institute: Optional[InstituteUpdate] = None
 
 # ThesisKeyword schemas
 class ThesisKeywordBase(BaseModel):

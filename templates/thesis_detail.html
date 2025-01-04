@@ -76,8 +76,15 @@
             <label for="abstract">Abstract</label>
             <textarea id="abstract" name="abstract"></textarea>
 
+            <label for="university">University</label>
+            <input type="text" id="university" name="university">
+
+            <label for="institute">Institute</label>
+            <input type="text" id="institute" name="institute">
+
             <button type="button" onclick="updateThesis()">Update Thesis</button>
             <button type="button" class="delete-button" onclick="deleteThesis()">Delete Thesis</button>
+            <a href="./search.html" style="text-decoration: none;"><button type="button" style="background-color: #35c6dc;">Back</button></a>
         </form>
     </div>
 
@@ -105,6 +112,8 @@
                     document.getElementById("type").value = thesisData.type || 'Type not available';
                     document.getElementById("language").value = thesisData.language ? thesisData.language.language_name : 'Language not available';
                     document.getElementById("abstract").value = thesisData.abstract || 'Abstract not available';
+                    document.getElementById("university").value = thesisData.university ? thesisData.university.name : 'University not available';
+                    document.getElementById("institute").value = thesisData.institute ? thesisData.institute.name : 'Institute not available';
                 } else {
                     alert('No thesis data found for this thesis number');
                 }
@@ -119,13 +128,30 @@
             const apiUrl = "http://localhost:8000";
 
             const updatedThesis = {
-                title: document.getElementById("title").value,
-                author: document.getElementById("author").value,
-                year: document.getElementById("year").value,
-                type: document.getElementById("type").value,
-                language: document.getElementById("language").value,
-                abstract: document.getElementById("abstract").value,
+                title: document.getElementById("title").value || undefined,
+                year: document.getElementById("year").value || undefined,
+                type: document.getElementById("type").value || undefined,
+                abstract: document.getElementById("abstract").value || undefined,
+                author: {
+                    first_name: document.getElementById("author").value.split(' ')[0] || undefined,
+                    last_name: document.getElementById("author").value.split(' ')[1] || undefined
+                },
+                language: {
+                    language_name: document.getElementById("language").value || undefined
+                },
+                university: {
+                    name: document.getElementById("university").value || undefined
+                },
+                institute: {
+                    name: document.getElementById("institute").value || undefined
+                }
             };
+
+            Object.keys(updatedThesis).forEach(key => {
+                if (updatedThesis[key] === undefined) {
+                    delete updatedThesis[key];
+                }
+            });
 
             const response = await fetch(`${apiUrl}/update_thesis/${thesisNo}`, {
                 method: 'PUT',
@@ -140,6 +166,7 @@
                 alert(`Failed to update thesis. Error: ${errorMessage.detail}`);
             }
         }
+
 
         async function deleteThesis() {
             const urlParams = new URLSearchParams(window.location.search);
